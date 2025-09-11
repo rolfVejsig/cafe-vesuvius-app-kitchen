@@ -92,114 +92,105 @@ class _KitchenScreenState extends State<KitchenScreen> {
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = width > 1200 ? 4 : width > 800 ? 2 : 1;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Køkken — Ordreoversigt'),
-        actions: [
-          IconButton(
-              tooltip: 'Opdater', onPressed: _loadOrders, icon: const Icon(Icons.refresh))
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (loading)
-              LinearProgressIndicator(
-                  minHeight: 4,
-                  color: Theme.of(context).primaryColor,
-                  backgroundColor: Colors.grey[900]),
-            if (error.isNotEmpty)
-              Container(
-                width: double.infinity,
-                color: Colors.red.shade900,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                child: Text(error,
-                    style: const TextStyle(color: Colors.white, fontSize: 16)),
-              ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadOrders,
+    return SafeArea(
+      child: Column(
+        children: [
+          if (loading)
+            LinearProgressIndicator(
+                minHeight: 4,
                 color: Theme.of(context).primaryColor,
-                backgroundColor: Colors.black,
-                child: GridView.count(
-                  crossAxisCount: crossAxisCount,
-                  padding: const EdgeInsets.all(12),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  children: statuses.map((status) {
-                    final filtered = orders.where((o) => o.status == status).toList();
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1C1C1C),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                              color: Colors.black54, blurRadius: 6, offset: Offset(0, 3))
-                        ],
-                        border: Border.all(color: status.color.withOpacity(0.35), width: 1.2),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                                color: status.color,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(14))),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(children: [
-                                  Icon(status.icon, color: Colors.white),
-                                  const SizedBox(width: 8),
-                                  Text(status.label,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16))
-                                ]),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                      color: Colors.white24,
-                                      borderRadius: BorderRadius.circular(20)),
-                                  child: Text('${filtered.length}',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontWeight: FontWeight.w700)),
+                backgroundColor: Colors.grey[900]),
+          if (error.isNotEmpty)
+            Container(
+              width: double.infinity,
+              color: Colors.red.shade900,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              child: Text(error,
+                  style: const TextStyle(color: Colors.white, fontSize: 16)),
+            ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadOrders,
+              color: Theme.of(context).primaryColor,
+              backgroundColor: Colors.black,
+              child: GridView.count(
+                crossAxisCount: crossAxisCount,
+                padding: const EdgeInsets.all(12),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                children: statuses.map((status) {
+                  final filtered = orders.where((o) => o.status == status).toList();
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C1C1C),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Colors.black54, blurRadius: 6, offset: Offset(0, 3))
+                      ],
+                      border: Border.all(color: status.color.withOpacity(0.35), width: 1.2),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                              color: status.color,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(14))),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(children: [
+                                Icon(status.icon, color: Colors.white),
+                                const SizedBox(width: 8),
+                                Text(status.label,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16))
+                              ]),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                    color: Colors.white24,
+                                    borderRadius: BorderRadius.circular(20)),
+                                child: Text('${filtered.length}',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: filtered.isEmpty
+                              ? Center(
+                                  child: Text('Ingen ordrer',
+                                      style: TextStyle(
+                                          color: Colors.grey[500], fontStyle: FontStyle.italic)))
+                              : ListView.builder(
+                                  padding: const EdgeInsets.all(12),
+                                  itemCount: filtered.length,
+                                  itemBuilder: (context, idx) {
+                                    final order = filtered[idx];
+                                    return OrderCard(
+                                      order: order,
+                                      statuses: statuses,
+                                      onChangeStatus: _updateStatus,
+                                      timeSinceLabel: _timeSince(order.placedAt),
+                                      urgencyColor: _urgencyColor(order),
+                                    );
+                                  },
                                 ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: filtered.isEmpty
-                                ? Center(
-                                    child: Text('Ingen ordrer',
-                                        style: TextStyle(
-                                            color: Colors.grey[500], fontStyle: FontStyle.italic)))
-                                : ListView.builder(
-                                    padding: const EdgeInsets.all(12),
-                                    itemCount: filtered.length,
-                                    itemBuilder: (context, idx) {
-                                      final order = filtered[idx];
-                                      return OrderCard(
-                                        order: order,
-                                        statuses: statuses,
-                                        onChangeStatus: _updateStatus,
-                                        timeSinceLabel: _timeSince(order.placedAt),
-                                        urgencyColor: _urgencyColor(order),
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
