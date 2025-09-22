@@ -29,17 +29,17 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(Color(0xFF3A0D12)),
-        foregroundColor: MaterialStateProperty.all(Colors.white),
-        shape: MaterialStateProperty.all(
+        backgroundColor: WidgetStateProperty.all(Color(0xFF3A0D12)),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
+        shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(14)),
           ),
         ),
-        padding: MaterialStateProperty.all(
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
-        elevation: MaterialStateProperty.all(2),
+        elevation: WidgetStateProperty.all(2),
       ),
     ),
     textTheme: const TextTheme(

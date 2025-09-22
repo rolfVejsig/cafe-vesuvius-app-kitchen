@@ -9,7 +9,7 @@ class OrderCard extends StatelessWidget {
   final String timeSinceLabel;
   final Color urgencyColor;
 
-  const OrderCard({
+  const OrderCard({super.key, 
     required this.order,
     required this.statuses,
     required this.onChangeStatus,

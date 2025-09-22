@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/kitchen_screen.dart';
-import 'screens/kitchen_inventory_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_navigation_screen.dart'; 
 import 'theme/app_theme.dart';
 
 class KitchenApp extends StatelessWidget {
