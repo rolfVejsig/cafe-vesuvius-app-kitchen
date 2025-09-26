@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../models/order.dart';
-import '../data/mock_orders.dart';
 import '../widgets/order_card.dart';
 
 class KitchenScreen extends StatefulWidget {
@@ -17,6 +18,9 @@ class _KitchenScreenState extends State<KitchenScreen> {
   bool loading = false;
   Timer? _refreshTimer;
   final refreshInterval = const Duration(seconds: 8);
+
+  // backend URL
+  final String baseUrl = "http://localhost:4000";
 
   @override
   void initState() {
@@ -34,14 +38,60 @@ class _KitchenScreenState extends State<KitchenScreen> {
   Future<void> _loadOrders() async {
     setState(() => loading = true);
     try {
-      final data = await mockFetchOrders();
-      data.sort((a, b) => a.placedAt.compareTo(b.placedAt));
-      setState(() {
-        orders = data;
-        error = '';
-      });
+      final response = await http.get(Uri.parse('$baseUrl/orders'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        // Map til dine Order-modeller
+        final List<Order> fetchedOrders = data.map((jsonOrder) {
+          final List<OrderItem> items = (jsonOrder['items'] as List<dynamic>)
+              .map((item) => OrderItem(
+                    qty: item['quantity'],
+                    name: item['menuItem']['name'],
+                  ))
+              .toList();
+
+          // Map status string til enum
+          OrderStatus status;
+          switch (jsonOrder['status']) {
+            case 'ORDERED':
+              status = OrderStatus.queued;
+              break;
+            case 'IN_PREPARATION':
+              status = OrderStatus.inProgress;
+              break;
+            case 'READY':
+              status = OrderStatus.ready;
+              break;
+            case 'COMPLICATION':
+              status = OrderStatus.complications;
+              break;
+            default:
+              status = OrderStatus.queued;
+          }
+
+          return Order(
+            id: jsonOrder['id'],
+            table: jsonOrder['customer']['name'] ?? 'Ukendt',
+            status: status,
+            items: items,
+            placedAt: DateTime.parse(jsonOrder['createdAt']),
+          );
+        }).toList();
+
+        fetchedOrders.sort((a, b) => a.placedAt.compareTo(b.placedAt));
+
+        setState(() {
+          orders = fetchedOrders;
+          error = '';
+        });
+      } else {
+        throw Exception('Fejl ved hentning af ordrer');
+      }
     } catch (e) {
-      setState(() => error = 'Kan ikke hente ordrer');
+      setState(() => error = 'Kan ikke hente ordrer fra serveren');
+      debugPrint('❌ $_loadOrders error: $e');
     } finally {
       setState(() => loading = false);
     }
@@ -60,17 +110,43 @@ class _KitchenScreenState extends State<KitchenScreen> {
     ScaffoldMessenger.of(context).showSnackBar(snack);
 
     try {
-      final updated = await mockUpdateStatus(orderId, newStatus);
-      await _loadOrders();
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ordre #${updated.id} flyttet til "${updated.status.label}" ✅'),
-        backgroundColor: Colors.grey[900],
-      ));
+      String statusString;
+      switch (newStatus) {
+        case OrderStatus.queued:
+          statusString = 'ORDERED';
+          break;
+        case OrderStatus.inProgress:
+          statusString = 'IN_PREPARATION';
+          break;
+        case OrderStatus.ready:
+          statusString = 'READY';
+          break;
+        case OrderStatus.complications:
+          statusString = 'COMPLICATION';
+          break;
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/orders/$orderId/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'status': statusString}),
+      );
+
+      if (response.statusCode == 200) {
+        await _loadOrders();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Ordre #$orderId opdateret til "$statusString" ✅'),
+          backgroundColor: Colors.grey[900],
+        ));
+      } else {
+        throw Exception('Kunne ikke opdatere status');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Kunne ikke opdatere status'), backgroundColor: Colors.red));
+      debugPrint('❌ _updateStatus error: $e');
     }
   }
 
