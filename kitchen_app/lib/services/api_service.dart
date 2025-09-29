@@ -5,7 +5,7 @@ import '../models/recipe.dart';
 import '../models/order.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:3000"; 
+  static const String baseUrl = "http://localhost:3000/api"; 
 
   // Hent ingredienser
   static Future<List<Ingredient>> fetchIngredients() async {
@@ -52,46 +52,82 @@ class ApiService {
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       return data.map((o) => Order(
-        id: o['id'],
-        table: o['table'],
-        status: OrderStatus.values.firstWhere(
-          (s) => s.toString().split('.').last == o['status'],
-        ),
-        items: (o['items'] as List).map((i) => OrderItem(
-          qty: i['qty'],
-          name: i['name'],
-        )).toList(),
-        placedAt: DateTime.parse(o['placedAt']),
+        id: o['id'] is int ? o['id'] : int.tryParse(o['id'].toString()) ?? 0,
+        table: o['table'] ?? o['tableId']?.toString() ?? 'Ukendt',
+        status: _mapStatusFromBackend(o['status']),
+        items: (o['menuItemIds'] ?? o['items'] ?? []).map<OrderItem>((i) {
+          if (i is Map) {
+            return OrderItem(qty: i['qty'] ?? i['quantity'] ?? 1, name: i['name'] ?? i['menuItem']?['name'] ?? '');
+          } else {
+            return OrderItem(qty: 1, name: i.toString());
+          }
+        }).toList(),
+        placedAt: DateTime.tryParse(o['createdAt'] ?? o['placedAt'] ?? '') ?? DateTime.now(),
       )).toList();
     } else {
       throw Exception("Kunne ikke hente ordrer");
     }
   }
 
+  static OrderStatus _mapStatusFromBackend(dynamic status) {
+    switch (status?.toString().toLowerCase()) {
+      case 'queued':
+      case 'ordered':
+        return OrderStatus.queued;
+      case 'in_progress':
+      case 'inpreparation':
+      case 'in_preparation':
+        return OrderStatus.inProgress;
+      case 'ready':
+        return OrderStatus.ready;
+      case 'problem':
+      case 'complication':
+      case 'complications':
+        return OrderStatus.complications;
+      default:
+        return OrderStatus.queued;
+    }
+  }
+
   // Opdater ordrestatus
   static Future<Order> updateOrderStatus(int orderId, OrderStatus newStatus) async {
+    final backendStatus = _mapStatusToBackend(newStatus);
     final response = await http.put(
-      Uri.parse("$baseUrl/orders/$orderId"),
+      Uri.parse("$baseUrl/orders/$orderId/status"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"status": newStatus.toString().split('.').last}),
+      body: jsonEncode({"status": backendStatus}),
     );
 
     if (response.statusCode == 200) {
       final o = jsonDecode(response.body);
       return Order(
-        id: o['id'],
-        table: o['table'],
-        status: OrderStatus.values.firstWhere(
-          (s) => s.toString().split('.').last == o['status'],
-        ),
-        items: (o['items'] as List).map((i) => OrderItem(
-          qty: i['qty'],
-          name: i['name'],
-        )).toList(),
-        placedAt: DateTime.parse(o['placedAt']),
+        id: o['id'] is int ? o['id'] : int.tryParse(o['id'].toString()) ?? 0,
+        table: o['table'] ?? o['tableId']?.toString() ?? 'Ukendt',
+        status: _mapStatusFromBackend(o['status']),
+        items: (o['menuItemIds'] ?? o['items'] ?? []).map<OrderItem>((i) {
+          if (i is Map) {
+            return OrderItem(qty: i['qty'] ?? i['quantity'] ?? 1, name: i['name'] ?? i['menuItem']?['name'] ?? '');
+          } else {
+            return OrderItem(qty: 1, name: i.toString());
+          }
+        }).toList(),
+        placedAt: DateTime.tryParse(o['createdAt'] ?? o['placedAt'] ?? '') ?? DateTime.now(),
       );
     } else {
       throw Exception("Kunne ikke opdatere ordrestatus");
+    }
+  }
+
+  static String _mapStatusToBackend(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.queued:
+        return 'queued';
+      case OrderStatus.inProgress:
+        return 'in_progress';
+      case OrderStatus.ready:
+        return 'ready';
+      case OrderStatus.complications:
+        return 'problem';
     }
   }
 
