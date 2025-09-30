@@ -5,7 +5,7 @@ import 'status_button.dart';
 class OrderCard extends StatelessWidget {
   final Order order;
   final List<OrderStatus> statuses;
-  final Future<void> Function(int, OrderStatus) onChangeStatus;
+  final Future<void> Function(String, OrderStatus) onChangeStatus;
   final String timeSinceLabel;
   final Color urgencyColor;
 
@@ -60,9 +60,23 @@ class OrderCard extends StatelessWidget {
               children: order.items
                   .map((it) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Text('${it.qty}× ${it.name}',
-                            style: const TextStyle(
-                                fontSize: 15, color: Colors.white70)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${it.qty}× ${it.name}',
+                                style: const TextStyle(
+                                    fontSize: 15, color: Colors.white70)),
+                            if (it.notes != null && it.notes!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16, top: 2),
+                                child: Text('💬 ${it.notes}',
+                                    style: const TextStyle(
+                                        fontSize: 13, 
+                                        color: Colors.orange,
+                                        fontStyle: FontStyle.italic)),
+                              ),
+                          ],
+                        ),
                       ))
                   .toList(),
             ),

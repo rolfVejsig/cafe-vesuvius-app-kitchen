@@ -48,7 +48,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
     }
   }
 
-  Future<void> _updateStatus(int orderId, OrderStatus newStatus) async {
+  Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final snack = SnackBar(
       content: Row(children: const [

@@ -46,11 +46,12 @@ extension OrderStatusProps on OrderStatus {
 class OrderItem {
   final int qty;
   final String name;
-  OrderItem({required this.qty, required this.name});
+  final String? notes;
+  OrderItem({required this.qty, required this.name, this.notes});
 }
 
 class Order {
-  final int id;
+  final String id;
   final String table;
   OrderStatus status;
   final List<OrderItem> items;

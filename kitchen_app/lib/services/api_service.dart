@@ -5,7 +5,7 @@ import '../models/recipe.dart';
 import '../models/order.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:3000/api"; 
+  static const String baseUrl = "http://100.115.199.103:3000/api"; 
 
   // Hent ingredienser
   static Future<List<Ingredient>> fetchIngredients() async {
@@ -50,14 +50,19 @@ class ApiService {
   static Future<List<Order>> fetchOrders() async {
     final response = await http.get(Uri.parse("$baseUrl/orders"));
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      final List data = responseData['orders'] ?? responseData['data'] ?? [];
       return data.map((o) => Order(
-        id: o['id'] is int ? o['id'] : int.tryParse(o['id'].toString()) ?? 0,
-        table: o['table'] ?? o['tableId']?.toString() ?? 'Ukendt',
+        id: o['id']?.toString() ?? '',
+        table: 'Bord ${o['tableNumber'] ?? o['tableName'] ?? o['table'] ?? 'Ukendt'}',
         status: _mapStatusFromBackend(o['status']),
-        items: (o['menuItemIds'] ?? o['items'] ?? []).map<OrderItem>((i) {
+        items: (o['items'] ?? []).map<OrderItem>((i) {
           if (i is Map) {
-            return OrderItem(qty: i['qty'] ?? i['quantity'] ?? 1, name: i['name'] ?? i['menuItem']?['name'] ?? '');
+            return OrderItem(
+              qty: i['quantity'] ?? i['qty'] ?? 1, 
+              name: i['name'] ?? i['menuItem']?['name'] ?? '',
+              notes: i['notes'] as String?,
+            );
           } else {
             return OrderItem(qty: 1, name: i.toString());
           }
@@ -70,19 +75,18 @@ class ApiService {
   }
 
   static OrderStatus _mapStatusFromBackend(dynamic status) {
-    switch (status?.toString().toLowerCase()) {
-      case 'queued':
-      case 'ordered':
+    switch (status?.toString().toUpperCase()) {
+      case 'ORDERED':
+      case 'CONFIRMED':
         return OrderStatus.queued;
-      case 'in_progress':
-      case 'inpreparation':
-      case 'in_preparation':
+      case 'PREPARING':
+      case 'IN_PREPARATION':
         return OrderStatus.inProgress;
-      case 'ready':
+      case 'READY':
         return OrderStatus.ready;
-      case 'problem':
-      case 'complication':
-      case 'complications':
+      case 'SERVED':
+      case 'COMPLETED':
+      case 'CANCELLED':
         return OrderStatus.complications;
       default:
         return OrderStatus.queued;
@@ -90,23 +94,28 @@ class ApiService {
   }
 
   // Opdater ordrestatus
-  static Future<Order> updateOrderStatus(int orderId, OrderStatus newStatus) async {
+  static Future<Order> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     final backendStatus = _mapStatusToBackend(newStatus);
-    final response = await http.put(
+    final response = await http.patch(
       Uri.parse("$baseUrl/orders/$orderId/status"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"status": backendStatus}),
     );
 
     if (response.statusCode == 200) {
-      final o = jsonDecode(response.body);
+      final responseData = jsonDecode(response.body);
+      final o = responseData['order'] ?? responseData;
       return Order(
-        id: o['id'] is int ? o['id'] : int.tryParse(o['id'].toString()) ?? 0,
-        table: o['table'] ?? o['tableId']?.toString() ?? 'Ukendt',
+        id: o['id']?.toString() ?? '',
+        table: 'Bord ${o['tableNumber'] ?? o['tableName'] ?? o['table'] ?? 'Ukendt'}',
         status: _mapStatusFromBackend(o['status']),
-        items: (o['menuItemIds'] ?? o['items'] ?? []).map<OrderItem>((i) {
+        items: (o['items'] ?? []).map<OrderItem>((i) {
           if (i is Map) {
-            return OrderItem(qty: i['qty'] ?? i['quantity'] ?? 1, name: i['name'] ?? i['menuItem']?['name'] ?? '');
+            return OrderItem(
+              qty: i['quantity'] ?? i['qty'] ?? 1, 
+              name: i['name'] ?? i['menuItem']?['name'] ?? '',
+              notes: i['notes'] as String?,
+            );
           } else {
             return OrderItem(qty: 1, name: i.toString());
           }
@@ -121,13 +130,13 @@ class ApiService {
   static String _mapStatusToBackend(OrderStatus status) {
     switch (status) {
       case OrderStatus.queued:
-        return 'queued';
+        return 'ORDERED';
       case OrderStatus.inProgress:
-        return 'in_progress';
+        return 'PREPARING';
       case OrderStatus.ready:
-        return 'ready';
+        return 'READY';
       case OrderStatus.complications:
-        return 'problem';
+        return 'CANCELLED';
     }
   }
 
