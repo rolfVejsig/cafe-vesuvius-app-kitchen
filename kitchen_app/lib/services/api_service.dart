@@ -6,6 +6,7 @@ class ApiService {
   static const String baseUrl = "http://100.115.199.103:3000/api"; 
 
   // Hent ordrer
+  
   static Future<List<Order>> fetchOrders() async {
     final response = await http.get(Uri.parse("$baseUrl/orders"));
     if (response.statusCode == 200) {
