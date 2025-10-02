@@ -130,7 +130,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
                         BoxShadow(
                             color: Colors.black54, blurRadius: 6, offset: Offset(0, 3))
                       ],
-                      border: Border.all(color: status.color.withOpacity(0.35), width: 1.2),
+                      border: Border.all(color: status.color.withValues(alpha: 0.35), width: 1.2),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
