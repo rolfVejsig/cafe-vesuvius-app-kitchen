@@ -9,13 +9,13 @@ class ApiService {
   // Hent ordrer
   
   static Future<List<Order>> fetchOrders() async {
-    final response = await http.get(Uri.parse("$baseUrl/orders"));
+    final response = await http.get(Uri.parse("$baseUrl/kitchen/orders"));
     if (response.statusCode == 200) {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
       final List data = responseData['orders'] ?? responseData['data'] ?? [];
       return data.map((o) => Order(
         id: o['id']?.toString() ?? '',
-        table: 'Bord ${o['tableNumber'] ?? o['tableName'] ?? o['table'] ?? 'Ukendt'}',
+        table: o['table'] ?? 'Bord ${o['tableNumber'] ?? o['tableName'] ?? 'Ukendt'}',
         status: _mapStatusFromBackend(o['status']),
         items: (o['items'] ?? []).map<OrderItem>((i) {
           if (i is Map) {
@@ -66,8 +66,8 @@ class ApiService {
     print('🌐 Order ID: "$orderId"');
     print('🌐 Frontend Status: ${newStatus.label} (${newStatus.name})');
     print('🌐 Backend Status: "$backendStatus"');
-    print('🌐 API URL: $baseUrl/orders/$orderId/status');
-    print('🌐 Full URL: $baseUrl/orders/$orderId/status');
+    print('🌐 API URL: $baseUrl/kitchen/orders/$orderId/status');
+    print('🌐 Full URL: $baseUrl/kitchen/orders/$orderId/status');
     
     final requestBody = {"status": backendStatus};
     final requestBodyJson = jsonEncode(requestBody);
@@ -75,7 +75,7 @@ class ApiService {
     
     try {
       final response = await http.patch(
-        Uri.parse("$baseUrl/orders/$orderId/status"),
+        Uri.parse("$baseUrl/kitchen/orders/$orderId/status"),
         headers: {"Content-Type": "application/json"},
         body: requestBodyJson,
       ).timeout(const Duration(seconds: 10));
@@ -93,7 +93,7 @@ class ApiService {
         
         return Order(
           id: o['id']?.toString() ?? '',
-          table: 'Bord ${o['tableNumber'] ?? o['tableName'] ?? o['table'] ?? 'Ukendt'}',
+          table: o['table'] ?? 'Bord ${o['tableNumber'] ?? o['tableName'] ?? 'Ukendt'}',
           status: _mapStatusFromBackend(o['status']),
           items: (o['items'] ?? []).map<OrderItem>((i) {
             if (i is Map) {
