@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/kitchen_screen.dart';
+import 'package:kitchen_app/screens/login_screen.dart';
+import 'package:kitchen_app/theme/app_theme.dart';
 
 void main() {
   runApp(const KitchenApp());
@@ -11,13 +12,10 @@ class KitchenApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cafe Vesuvius Kitchen',
+      title: 'Vesuvius Kitchen App',
+      theme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const KitchenScreen(),
+      home: const LoginScreen(),
     );
   }
 }
