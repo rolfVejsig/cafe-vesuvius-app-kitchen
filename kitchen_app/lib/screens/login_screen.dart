@@ -35,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Validate hardcoded credentials
     final username = _usernameController.text;
     final password = _passwordController.text;
     

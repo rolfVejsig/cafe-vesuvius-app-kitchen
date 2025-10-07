@@ -6,8 +6,6 @@ import '../config.dart';
 class ApiService {
   static const String baseUrl = "$apiBaseUrl/api"; 
 
-  // Hent ordrer
-  
   static Future<List<Order>> fetchOrders() async {
     final response = await http.get(Uri.parse("$baseUrl/kitchen/orders"));
     if (response.statusCode == 200) {
@@ -58,7 +56,6 @@ class ApiService {
     }
   }
 
-  // Opdater ordrestatus
   static Future<Order> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     final backendStatus = _mapStatusToBackend(newStatus);
     
@@ -122,9 +119,9 @@ class ApiService {
   static String _mapStatusToBackend(OrderStatus status) {
     switch (status) {
       case OrderStatus.queued:
-        return 'ORDERED';  // Database expects ORDERED for queued orders
+        return 'ORDERED';  
       case OrderStatus.inProgress:
-        return 'IN_PREPARATION';  // Database expects IN_PREPARATION, not PREPARING
+        return 'IN_PREPARATION'; 
       case OrderStatus.ready:
         return 'READY';
       case OrderStatus.complications:
